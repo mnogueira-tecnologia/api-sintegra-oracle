@@ -1,27 +1,32 @@
-# Integração da API SINTEGRA em Python – Consulta de Inscrição Estadual em tempo real
+# Integração da API SINTEGRA com Oracle PL/SQL – Consulta de Inscrição Estadual em tempo real
 
-Exemplo de integração em **Python** com a API SINTEGRA da **ArquivoNFe**, para consulta de dados cadastrais por UF.
+Exemplo de integração da **API SINTEGRA da ArquivoNfe** utilizando Oracle PL/SQL e os recursos `APEX_WEB_SERVICE` e `APEX_JSON`.
 
-A API permite realizar consultas utilizando **CNPJ, CPF ou Inscrição Estadual (IE)**, conforme a disponibilidade da consulta para cada UF.
+O projeto demonstra como realizar consultas de dados cadastrais de contribuintes por UF, utilizando **CNPJ, CPF ou Inscrição Estadual (IE)**, conforme a disponibilidade da consulta para cada UF.
+
+A integração utiliza processamento assíncrono por meio do `request_id`, permitindo enviar solicitações e consultar seus respectivos resultados posteriormente.
 
 ## 🔎 Palavras-chave
 
-* API SINTEGRA
+* API SINTEGRA Oracle
+* Oracle PL/SQL
+* Oracle APEX
 * Consulta SINTEGRA
 * SINTEGRA CCC
 * Consulta Inscrição Estadual
 * API Fiscal Brasil
+* Integração Oracle com API REST
 * Consulta CNPJ
 * Consulta CPF
-* Consulta Inscrição Estadual por API
 
 ## Benefícios
 
 ✔ Consulta por CNPJ, CPF ou IE<br>
-✔ Dados cadastrais retornados pela API<br>
-✔ Integração simples via API REST<br>
+✔ Integração com Oracle PL/SQL<br>
+✔ Comunicação com API REST via HTTPS<br>
 ✔ Processamento assíncrono utilizando `request_id`<br>
-✔ Exemplo prático de integração em Python
+✔ Armazenamento dos resultados em tabelas Oracle<br>
+✔ Exemplo prático de integração com Oracle APEX
 
 ## Casos de uso
 
@@ -29,24 +34,37 @@ A API permite realizar consultas utilizando **CNPJ, CPF ou Inscrição Estadual 
 ✔ Conferência cadastral automática<br>
 ✔ Verificação de informações de empresas e contribuintes<br>
 ✔ Integração com sistemas ERP e aplicações próprias<br>
-✔ Processos de KYC (Know Your Customer)
+✔ Automatização de processos fiscais
 
 ## Diferenciais
 
 ✔ Consulta dos dados cadastrais disponibilizados pela SEFAZ da UF consultada.<br>
 ✔ Comunicação segura por HTTPS.<br>
 ✔ Infraestrutura hospedada na Oracle Cloud no Brasil.<br>
-✔ Painel web para configurações, consultas manuais e acompanhamento das integrações via API.<br>
-✔ API REST com suporte a consultas por CNPJ, CPF ou Inscrição Estadual.
+✔ API REST com suporte a consultas por CNPJ, CPF ou Inscrição Estadual.<br>
+✔ Exemplo de integração utilizando recursos nativos do Oracle APEX.
 
 ---
 
 ## 🚀 Requisitos
 
-* Windows ou Linux
-* Python 3.x
-* Git (opcional, caso escolha clonar o projeto)
-* Biblioteca `requests`
+* Oracle Database com suporte a PL/SQL
+* Oracle APEX, para utilização de `APEX_WEB_SERVICE` e `APEX_JSON`
+* Acesso HTTPS ao endpoint da API
+* Token de autenticação da ArquivoNfe
+
+---
+
+## 📁 Arquivos do projeto
+
+| Arquivo                      | Descrição                                                        |
+| ---------------------------- | ---------------------------------------------------------------- |
+| `tabelas.sql`                | Criação das tabelas, sequences, constraints e registros de teste |
+| `PK_VALIDA_CONTRIBUINTE.pck` | Package PL/SQL responsável pela integração com a API             |
+| `sintegra.png`               | Imagem ilustrativa                                               |
+| `teste_etapa1.png`           | Exemplo da primeira etapa da integração                          |
+| `teste_etapa2.png`           | Exemplo da segunda etapa                                         |
+| `teste_etapa3.png`           | Exemplo da terceira etapa                                        |
 
 ---
 
@@ -69,221 +87,109 @@ Após o login no portal:
 1. Acesse o menu **Meu Token**.
 2. Copie seu token de acesso.
 
-> ⚠️ **Nunca publique seu token de acesso no GitHub.**
+> ⚠️ Nunca publique seu token de acesso no GitHub.
 
-No arquivo `consulta_sintegra.py`, informe seu token apenas localmente:
+No package `PK_VALIDA_CONTRIBUINTE.pck`, localize a variável:
 
-```python
-TOKEN = 'SEU_TOKEN_AQUI'
+```sql
+gv_token := 'SEU_TOKEN_AQUI';
 ```
 
-Antes de publicar o código no GitHub, certifique-se de que o token não esteja preenchido.
+Informe seu token apenas no ambiente local.
 
 ---
 
-### 3️⃣ Instalação do Python
+### 3️⃣ Crie as tabelas
 
-O exemplo utiliza **Python 3**.
+Execute o script `tabelas.sql` no schema Oracle que será utilizado para a integração.
 
-#### Windows
+O script cria:
 
-Baixe o Python pelo site oficial:
-
-https://www.python.org/downloads/windows/
-
-Durante a instalação, marque a opção:
-
-**Add python.exe to PATH**
-
-Depois de concluir a instalação, abra o **Prompt de Comando (CMD)** e execute:
-
-```bash
-python --version
-```
-
-O comando deverá apresentar a versão instalada, por exemplo:
-
-```text
-Python 3.13.x
-```
-
-#### Linux
-
-Verifique se o Python 3 está instalado:
-
-```bash
-python3 --version
-```
-
-Caso não esteja instalado, utilize o gerenciador de pacotes da sua distribuição.
-
-Por exemplo, no Ubuntu/Debian:
-
-```bash
-sudo apt update
-sudo apt install python3 python3-pip python3-venv
-```
-
-Depois confirme:
-
-```bash
-python3 --version
-```
+* Tabela `VALIDA_CONTRIBUINTE`: armazena as solicitações de consulta.
+* Tabela `VALIDA_CONTRIBUINTE_RETORNO`: armazena os dados retornados pela API.
+* Sequences para geração dos identificadores.
+* Constraints e índice para relacionamento entre as tabelas.
+* Registros de exemplo para teste.
 
 ---
 
-### 4️⃣ Baixe o projeto
+### 4️⃣ Configure o package
 
-Você pode baixar o projeto diretamente pelo GitHub ou cloná-lo utilizando o Git.
+Abra o arquivo `PK_VALIDA_CONTRIBUINTE.pck` e configure o token de acesso.
 
-#### Opção 1 — Baixar ZIP
+O package utiliza os recursos:
 
-No GitHub, clique em:
+* `APEX_WEB_SERVICE`: envio das requisições HTTP.
+* `APEX_JSON`: leitura e interpretação das respostas JSON.
+* `DBMS_LOCK.SLEEP`: intervalo entre tentativas de consulta.
 
-**Code → Download ZIP**
-
-Depois, extraia o arquivo em uma pasta do seu computador.
-
-#### Opção 2 — Clonar com Git
-
-Se o Git estiver instalado, execute:
-
-```bash
-git clone https://github.com/mnogueira-tecnologia/api-sintegra-python.git
-```
-
-Depois acesse a pasta do projeto:
-
-```bash
-cd api-sintegra-python
-```
+O schema precisa possuir os privilégios necessários para utilização desses recursos e acesso HTTPS ao endpoint da API.
 
 ---
 
-### 5️⃣ Crie um ambiente virtual Python
+### 5️⃣ Execute a integração
 
-É recomendado utilizar um ambiente virtual para manter as dependências do projeto isoladas.
+O package disponibiliza duas procedures:
 
-#### Windows
+**PB_ENVIA_SINTEGRA**
 
-Dentro da pasta do projeto, execute:
+Responsável por enviar as consultas pendentes à API, utilizando CNPJ, CPF ou IE e armazenando o `request_id` retornado.
 
-```bash
-python -m venv .venv
-```
+**PB_RETORNO_SINTEGRA**
 
-Ative o ambiente virtual:
+Responsável por consultar os resultados das solicitações enviadas anteriormente e armazenar os dados cadastrais retornados.
 
-```bash
-.venv\Scripts\activate
-```
-
-Após a ativação, o terminal deverá apresentar algo semelhante a:
-
-```text
-(.venv) C:\Users\seu_usuario\api-sintegra-python>
-```
-
-#### Linux
-
-Crie o ambiente virtual:
-
-```bash
-python3 -m venv .venv
-```
-
-Ative o ambiente:
-
-```bash
-source .venv/bin/activate
-```
+A separação em duas etapas permite organizar o envio das solicitações e o processamento dos respectivos retornos.
 
 ---
 
-### 6️⃣ Instale as dependências
+### 6️⃣ Consulte os resultados
 
-Com o ambiente virtual ativado, instale a biblioteca `requests` e as demais dependências do projeto:
+Os registros de integração são armazenados nas tabelas:
 
-#### Windows
-
-```bash
-pip install -r requirements.txt
+```sql
+SELECT *
+FROM VALIDA_CONTRIBUINTE;
 ```
 
-#### Linux
-
-```bash
-pip3 install -r requirements.txt
+```sql
+SELECT *
+FROM VALIDA_CONTRIBUINTE_RETORNO;
 ```
 
-Você também pode verificar se a biblioteca `requests` foi instalada corretamente:
+A situação da solicitação é controlada pelo campo `SIT`:
 
-```bash
-pip show requests
-```
+| SIT | Descrição           |
+| --- | ------------------- |
+| 1   | Pendente            |
+| 2   | Processado com erro |
+| 3   | Processado          |
 
 ---
 
-### 7️⃣ Configure seu Token
+## 🔄 Fluxo da integração
 
-Abra o arquivo [`consulta_sintegra.py`](consulta_sintegra.py) e informe seu token de acesso:
-
-```python
-TOKEN = 'SEU_TOKEN_AQUI'
-```
-
-Por exemplo:
-
-```python
-TOKEN = '123456789abcdef'
-```
-
-> ⚠️ **O token acima é apenas um exemplo. Nunca utilize ou publique tokens reais no GitHub.**
-
-Antes de executar o projeto, certifique-se de que o token esteja configurado corretamente.
+1. Inclusão dos contribuintes na tabela `VALIDA_CONTRIBUINTE`.
+2. Envio das solicitações à API.
+3. Recebimento e armazenamento do `request_id`.
+4. Consulta dos resultados utilizando o protocolo.
+5. Armazenamento dos dados cadastrais na tabela de retorno.
 
 ---
 
-### 8️⃣ Execute o exemplo
+## 📄 Exemplos de execução
 
-Com o ambiente virtual ativado e o token configurado, execute o script.
+### Etapa 1 — Envio das consultas
 
-#### Windows
+![Envio das consultas](teste_etapa1.png)
 
-```bash
-python consulta_sintegra.py
-```
+### Etapa 2 — Consulta dos retornos
 
-#### Linux
+![Consulta dos retornos](teste_etapa2.png)
 
-```bash
-python3 consulta_sintegra.py
-```
+### Etapa 3 — Dados armazenados
 
-O script realizará as consultas configuradas no exemplo e exibirá os resultados retornados pela API no terminal.
-
-O exemplo demonstra:
-
-* envio de consultas por CNPJ, CPF ou Inscrição Estadual;
-* armazenamento do `request_id` (protocolo da consulta);
-* consulta dos resultados de forma assíncrona;
-* novas tentativas quando a consulta ainda está em processamento;
-* tratamento das respostas da API;
-* exibição dos resultados em formato JSON.
-
-O código-fonte completo está disponível em:
-
-[`consulta_sintegra.py`](consulta_sintegra.py)
-
----
-
-## 📄 Exemplo de retorno da API
-
-O exemplo abaixo apresenta um retorno da API após a conclusão da consulta:
-
-![Retorno JSON](teste_etapa1.png)
-![Retorno JSON](teste_etapa2.png)
-![Retorno JSON](teste_etapa3.png)
+![Dados armazenados](teste_etapa3.png)
 
 ---
 
