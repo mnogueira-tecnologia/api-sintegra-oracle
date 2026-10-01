@@ -4,7 +4,7 @@ Exemplo de integração da **API SINTEGRA da ArquivoNfe** utilizando Oracle PL/S
 
 O projeto demonstra como realizar consultas de dados cadastrais de contribuintes por UF, utilizando **CNPJ, CPF ou Inscrição Estadual (IE)**, conforme a disponibilidade da consulta para cada UF.
 
-A integração utiliza processamento assíncrono por meio do `request_id`, permitindo enviar solicitações e consultar seus respectivos resultados posteriormente.
+A integração utiliza processamento assíncrono por meio do `request_id`, permitindo enviar as solicitações e consultar seus respectivos resultados posteriormente.
 
 ## 🔎 Palavras-chave
 
@@ -21,32 +21,32 @@ A integração utiliza processamento assíncrono por meio do `request_id`, permi
 
 ## Benefícios
 
-✔ Consulta por CNPJ, CPF ou IE<br>
-✔ Integração com Oracle PL/SQL<br>
-✔ Comunicação com API REST via HTTPS<br>
-✔ Processamento assíncrono utilizando `request_id`<br>
-✔ Armazenamento dos resultados em tabelas Oracle<br>
-✔ Exemplo prático de integração com Oracle APEX
+* Consulta por CNPJ, CPF ou IE
+* Integração com Oracle PL/SQL
+* Comunicação com API REST via HTTPS
+* Processamento assíncrono utilizando `request_id`
+* Armazenamento dos resultados em tabelas Oracle
+* Exemplo prático de integração com Oracle APEX
 
 ## Casos de uso
 
-✔ Validação cadastral antes da emissão de NF<br>
-✔ Conferência cadastral automática<br>
-✔ Verificação de informações de empresas e contribuintes<br>
-✔ Integração com sistemas ERP e aplicações próprias<br>
-✔ Automatização de processos fiscais
+* Validação cadastral antes da emissão de NF
+* Conferência cadastral automática
+* Verificação de informações de empresas e contribuintes
+* Integração com sistemas ERP e aplicações próprias
+* Automatização de processos fiscais
 
 ## Diferenciais
 
-✔ Consulta dos dados cadastrais disponibilizados pela SEFAZ da UF consultada.<br>
-✔ Comunicação segura por HTTPS.<br>
-✔ Infraestrutura hospedada na Oracle Cloud no Brasil.<br>
-✔ API REST com suporte a consultas por CNPJ, CPF ou Inscrição Estadual.<br>
-✔ Exemplo de integração utilizando recursos nativos do Oracle APEX.
+* Consulta dos dados cadastrais disponibilizados pela SEFAZ da UF consultada.
+* Comunicação segura por HTTPS.
+* Infraestrutura hospedada na Oracle Cloud no Brasil.
+* API REST com suporte a consultas por CNPJ, CPF ou Inscrição Estadual.
+* Exemplo de integração utilizando recursos nativos do Oracle APEX.
 
 ---
 
-## 🚀 Requisitos
+## 📋 Requisitos
 
 * Oracle Database com suporte a PL/SQL
 * Oracle APEX, para utilização de `APEX_WEB_SERVICE` e `APEX_JSON`
@@ -68,7 +68,7 @@ A integração utiliza processamento assíncrono por meio do `request_id`, permi
 
 ---
 
-## ⚙️ Como utilizar
+## 🚀 Como utilizar
 
 ### 1️⃣ Cadastre-se gratuitamente
 
@@ -129,13 +129,13 @@ O schema precisa possuir os privilégios necessários para utilização desses r
 
 ### 5️⃣ Execute a integração
 
-O package disponibiliza duas procedures:
+O package disponibiliza duas procedures principais:
 
-**PB_ENVIA_SINTEGRA**
+#### `PB_ENVIA_SINTEGRA`
 
 Responsável por enviar as consultas pendentes à API, utilizando CNPJ, CPF ou IE e armazenando o `request_id` retornado.
 
-**PB_RETORNO_SINTEGRA**
+#### `PB_RETORNO_SINTEGRA`
 
 Responsável por consultar os resultados das solicitações enviadas anteriormente e armazenar os dados cadastrais retornados.
 
@@ -143,7 +143,69 @@ A separação em duas etapas permite organizar o envio das solicitações e o pr
 
 ---
 
-### 6️⃣ Consulte os resultados
+## 🔄 Execução dos processos
+
+As procedures de integração podem ser executadas de diferentes formas, de acordo com a arquitetura do sistema que estiver utilizando a API.
+
+Por exemplo:
+
+* por meio de um **JOB do Oracle**;
+* por um **scheduler** da aplicação;
+* diretamente por uma aplicação ou sistema ERP;
+* manualmente, durante testes ou processos específicos.
+
+Não é necessário manter as procedures em execução continuamente.
+
+O cliente pode definir a frequência e a forma de execução de acordo com sua necessidade.
+
+Por exemplo, uma implementação pode executar periodicamente:
+
+```sql
+BEGIN
+    pk_valida_contribuinte.pb_envia_sintegra;
+    pk_valida_contribuinte.pb_retorno_sintegra;
+END;
+/
+```
+
+Outra implementação pode separar as duas etapas em processos diferentes, inclusive utilizando horários ou JOBs distintos.
+
+---
+
+## 💾 Controle de transação
+
+O exemplo utiliza operações de `INSERT`, `UPDATE` e demais operações necessárias para controlar o processo de integração.
+
+O **controle da transação (`COMMIT` ou `ROLLBACK`) deve ser definido pelo usuário de acordo com a estrutura e a arquitetura de seu processo de integração**.
+
+Dessa forma, o exemplo não pressupõe que o cliente utilizará uma estratégia específica de controle transacional.
+
+Por exemplo, a aplicação pode optar por:
+
+* realizar `COMMIT` após concluir cada etapa;
+* realizar `COMMIT` após um determinado lote;
+* controlar o `COMMIT` externamente à package;
+* utilizar `ROLLBACK` em caso de falha do processo.
+
+Essa decisão depende do modelo de processamento adotado pelo sistema que está utilizando a integração.
+
+---
+
+## 🔢 Limite de tentativas
+
+Durante o processo de consulta dos resultados, o exemplo possui um limite de **2.000 tentativas de chamada** à API para o processamento dos registros.
+
+Esse limite evita que um processo permaneça executando indefinidamente em situações nas quais determinados registros não estejam disponíveis para retorno.
+
+Os registros que eventualmente **não forem integrados dentro do processamento atual permanecem disponíveis para uma próxima execução**, de acordo com as regras implementadas no processo do cliente.
+
+Dessa forma, o processo pode ser executado novamente, permitindo que as solicitações pendentes sejam tratadas posteriormente.
+
+O número de tentativas e os critérios de processamento podem ser adaptados pelo usuário conforme sua necessidade e arquitetura.
+
+---
+
+## 📊 Consulte os resultados
 
 Os registros de integração são armazenados nas tabelas:
 
@@ -169,15 +231,46 @@ A situação da solicitação é controlada pelo campo `SIT`:
 
 ## 🔄 Fluxo da integração
 
-1. Inclusão dos contribuintes na tabela `VALIDA_CONTRIBUINTE`.
-2. Envio das solicitações à API.
-3. Recebimento e armazenamento do `request_id`.
-4. Consulta dos resultados utilizando o protocolo.
-5. Armazenamento dos dados cadastrais na tabela de retorno.
+O processo é dividido em duas etapas principais.
+
+### 1. Envio das consultas
+
+Os contribuintes são incluídos na tabela `VALIDA_CONTRIBUINTE`.
+
+A procedure `PB_ENVIA_SINTEGRA` envia as solicitações para a API e recebe um `request_id` para cada consulta aceita.
+
+### 2. Consulta dos resultados
+
+A procedure `PB_RETORNO_SINTEGRA` utiliza o `request_id` para consultar posteriormente o resultado da solicitação.
+
+Quando o resultado está disponível, os dados cadastrais são armazenados na tabela `VALIDA_CONTRIBUINTE_RETORNO`.
+
+### Fluxo resumido
+
+```text
+VALIDA_CONTRIBUINTE
+        │
+        ▼
+PB_ENVIA_SINTEGRA
+        │
+        ▼
+      API
+        │
+        ▼
+   request_id
+        │
+        ▼
+PB_RETORNO_SINTEGRA
+        │
+        ▼
+VALIDA_CONTRIBUINTE_RETORNO
+```
+
+A arquitetura assíncrona permite separar o envio das solicitações da obtenção dos resultados.
 
 ---
 
-## 📄 Exemplos de execução
+## 🧪 Exemplos de execução
 
 ### Etapa 1 — Envio das consultas
 
@@ -193,7 +286,7 @@ A situação da solicitação é controlada pelo campo `SIT`:
 
 ---
 
-## 🔗 Documentação da API
+## 📚 Documentação da API
 
 Consulte a documentação completa da API SINTEGRA:
 
